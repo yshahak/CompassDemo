@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/img_sonar_bg"
+    android:clipChildren="false"
+    tools:context="com.example.yshahak.compassdemo.MainActivity">
+
+    <View
+        android:id="@+id/grid"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        tools:alpha="1"
+        android:background="@drawable/grid"/>
+
+
+    <RelativeLayout android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/hot_margin_top"
+            android:layout_centerHorizontal="true">
+
+            <ImageView
+                android:id="@+id/img_hot_fire"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:alpha="0"
+                tools:alpha="1"
+                android:src="@drawable/ic_sonar_fire"/>
+
+            <TextView
+                android:id="@+id/text_view_sonar_hot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_marginLeft="8dp"
+                android:layout_gravity="center_vertical"
+                android:text="Hot Sonar"
+                android:alpha="0"
+                tools:alpha="1"
+                android:textStyle="bold"
+                android:textSize="30sp"
+                android:textColor="@color/blue"/>
+        </LinearLayout>
+
+        <View
+            android:id="@+id/meter_grid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            tools:alpha="1"
+            android:layout_above="@+id/half_panel"
+            android:background="@drawable/img_sonar_circle_meter_grid"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:alpha="0"
+            tools:alpha="1"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/img_sonar_half_circle_no_teeth"/>
+
+        <ImageView
+            android:id="@+id/half_panel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            tools:alpha="1"
+            android:adjustViewBounds="true"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/img_sonar_half_circle_teeth"/>
+
+        <ImageView
+            android:id="@+id/half_panel_rotate_holder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            tools:alpha="1"
+            android:adjustViewBounds="true"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/img_sonar_half_circle_teeth"/>
+
+        <TextView
+            android:id="@+id/text_azimuth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            tools:alpha="1"
+            tools:text="a: 0"
+            android:textColor="@color/blue"
+            android:textSize="20sp"
+            android:layout_above="@+id/img_arrow"
+            android:layout_centerHorizontal="true" />
+
+        <ImageView
+            android:id="@+id/img_arrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            tools:alpha="1"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/img_sonar_arro" />
+    </RelativeLayout>
+
+</FrameLayout>
+
