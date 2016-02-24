@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CompassDemo</string>
+    <string name="azimuth">a: %1$.1f \u2103</string>
 </resources>

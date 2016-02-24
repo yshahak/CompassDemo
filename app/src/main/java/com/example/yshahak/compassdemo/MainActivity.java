@@ -1,7 +1,11 @@
 package com.example.yshahak.compassdemo;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.graphics.Rect;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -10,41 +14,57 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
-    //    private float currentDegree = 0f;
-//    private SensorManager mSensorManager;
-//    private Sensor accelerometer;
-//    private Sensor magnetometer;
+    private SensorManager mSensorManager;
+    private Sensor accelerometer;
+    private Sensor magnetometer;
     private TextView textViewSonarHot;
     private View hotFire;
     private View halfPanelAnimationView;
     private View halfPanel;
-    private View grid;
+    private View impNeedle;
+    private ImageView grid, gridRight, gridLeft;
     private TextView textAzimuth;
     private View smallArrow;
     private View meterGrid;
+    private View square1, square2, square3, square4 ;
+    private boolean animationEnded;
+    String azimuthHolder;
+    private int width;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        azimuthHolder = getString(R.string.azimuth);
 
-//        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-//        accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-//        magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+
         textViewSonarHot = (TextView) findViewById(R.id.text_view_sonar_hot);
         hotFire = findViewById(R.id.img_hot_fire);
         halfPanelAnimationView = findViewById(R.id.half_panel_rotate_holder);
         halfPanel = findViewById(R.id.half_panel);
-        grid = findViewById(R.id.grid);
+        impNeedle = findViewById(R.id.img_needle);
+        grid = (ImageView) findViewById(R.id.grid);
+        gridRight = (ImageView) findViewById(R.id.grid1);
+        gridLeft = (ImageView) findViewById(R.id.grid2);
         textAzimuth = (TextView) findViewById(R.id.text_azimuth);
         smallArrow = findViewById(R.id.img_arrow);
         meterGrid = findViewById(R.id.meter_grid);
+        square1 = findViewById(R.id.img_square1);
+        square2 = findViewById(R.id.img_square2);
+        square3 = findViewById(R.id.img_square3);
+        square4 = findViewById(R.id.img_square4);
         //hot panel fade in animation
         final DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -63,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 hotFire.animate().translationX(xOffset).setDuration(0).start();
                 hotFire.animate().translationY(hotFire.getHeight()).setDuration(0).start();
                 startHotSonarEnterAnimation();
+
             }
         });
 
@@ -81,10 +102,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         AnimatorSet halfPanelAnimation = getHalfPanelEnterAnimation();
         AnimatorSet triangleAnimation = getTriangleAnimation();
         ObjectAnimator meterGridAnimation = ObjectAnimator.ofFloat(meterGrid, View.ALPHA, 1).setDuration(1500);
+        AnimatorSet squaresAnimator = getSquaresAnimation();
         AnimatorSet animator = new AnimatorSet();
-        animator.playSequentially(hotPolarAnimation, halfPanelAnimation, triangleAnimation, meterGridAnimation);
+        animator.playSequentially(hotPolarAnimation, halfPanelAnimation, triangleAnimation, meterGridAnimation, squaresAnimator);
         animator.start();
     }
+
 
 
 
@@ -95,14 +118,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         halfPanelAnimationView.setPivotY(pivotY);
         halfPanel.setPivotX(pivotX);
         halfPanel.setPivotY(pivotY);
+        impNeedle.setPivotX(((ImageView)impNeedle).getDrawable().getIntrinsicWidth() / 2);
+        impNeedle.setPivotY(((ImageView)impNeedle).getDrawable().getIntrinsicHeight());
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.setDuration(1000).setStartDelay(1000);
-        ObjectAnimator rotateToStart = ObjectAnimator.ofFloat(halfPanelAnimationView,
-                View.ROTATION, -90, 0, -10);
+        ObjectAnimator rotateNeedle = ObjectAnimator.ofFloat(impNeedle, View.ROTATION, 90, -270);
+        rotateNeedle.setDuration(3000).setStartDelay(3700);
+        rotateNeedle.setRepeatCount(ValueAnimator.INFINITE);
+        rotateNeedle.setRepeatMode(ValueAnimator.RESTART);
+        rotateNeedle.setInterpolator(new LinearInterpolator());
+        rotateNeedle.start();
+        ObjectAnimator alpha4 = ObjectAnimator.ofFloat(impNeedle, View.ALPHA, 1).setDuration(0);
+        alpha4.setStartDelay(3750);
+        alpha4.start();
+
+        ObjectAnimator rotateToStart = ObjectAnimator.ofFloat(halfPanelAnimationView, View.ROTATION, -90, 0, -10);
+
 //        rotateToStart.setRepeatCount(ValueAnimator.INFINITE);
 //        rotateToStart.setRepeatMode(ValueAnimator.REVERSE);
         ObjectAnimator rotate = ObjectAnimator.ofFloat(halfPanel,
                 View.ROTATION, 0, 90, 80);
+
 //        rotate.setRepeatCount(ValueAnimator.INFINITE);
 //        rotate.setRepeatMode(ValueAnimator.REVERSE);
 //        rotate.setInterpolator(new DecelerateInterpolator());
@@ -112,7 +148,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         ObjectAnimator alpha1 = ObjectAnimator.ofFloat(halfPanel, View.ALPHA, 1).setDuration(200);
         ObjectAnimator alpha2 = ObjectAnimator.ofFloat(halfPanelAnimationView, View.ALPHA, 1).setDuration(200);
         ObjectAnimator alpha3 = ObjectAnimator.ofFloat(grid, View.ALPHA, 1).setDuration(1000);
+
         animatorSet.playTogether(alpha1, alpha2, alpha3, rotateToStart, rotate);
+        animatorSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                animationEnded = true;
+
+            }
+        });
         return animatorSet;
     }
 
@@ -130,11 +174,40 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return animatorSet;
     }
 
+    private AnimatorSet getSquaresAnimation() {
+        ObjectAnimator alpha1 = ObjectAnimator.ofFloat(square1, View.ALPHA, 1);
+        ObjectAnimator alpha2 = ObjectAnimator.ofFloat(square2, View.ALPHA, 1);
+        ObjectAnimator alpha3 = ObjectAnimator.ofFloat(square3, View.ALPHA, 1);
+        ObjectAnimator alpha4 = ObjectAnimator.ofFloat(square4, View.ALPHA, 1);
+        ObjectAnimator scaleX1 = ObjectAnimator.ofFloat(square1, View.SCALE_X, 1.3f, 1);
+        ObjectAnimator scaleY1 = ObjectAnimator.ofFloat(square1, View.SCALE_Y, 1.3f, 1);
+        ObjectAnimator scaleX2 = ObjectAnimator.ofFloat(square2, View.SCALE_X, 1.3f, 1);
+        ObjectAnimator scaleY2 = ObjectAnimator.ofFloat(square2, View.SCALE_Y, 1.3f, 1);
+        ObjectAnimator scaleX3 = ObjectAnimator.ofFloat(square3, View.SCALE_X, 1.3f, 1);
+        ObjectAnimator scaleY3 = ObjectAnimator.ofFloat(square3, View.SCALE_Y, 1.3f, 1);
+        ObjectAnimator scaleX4 = ObjectAnimator.ofFloat(square4, View.SCALE_X, 1.3f, 1);
+        ObjectAnimator scaleY4 = ObjectAnimator.ofFloat(square4, View.SCALE_Y, 1.3f, 1);
+        AnimatorSet animatorSet1 = new AnimatorSet().setDuration(1200);
+        animatorSet1.playTogether(alpha1, scaleX1, scaleY1);
+        AnimatorSet animatorSet2 = new AnimatorSet().setDuration(1200);
+        animatorSet2.setStartDelay(300);
+        animatorSet2.playTogether(alpha2, scaleX2, scaleY2);
+        AnimatorSet animatorSet3 = new AnimatorSet().setDuration(1200);
+        animatorSet3.setStartDelay(600);
+        animatorSet3.playTogether(alpha3, scaleX3, scaleY3);
+        AnimatorSet animatorSet4 = new AnimatorSet().setDuration(1200);
+        animatorSet4.setStartDelay(900);
+        animatorSet4.playTogether(alpha4, scaleX4, scaleY4);
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playTogether(animatorSet1, animatorSet2, animatorSet3, animatorSet4);
+        return animatorSet;
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         // for the system's orientation sensor registered listeners
-        //mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),   SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),   SensorManager.SENSOR_DELAY_UI);
 
 //        mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
 //        mSensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI);
@@ -143,36 +216,64 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onPause() {
         super.onPause();
-        //mSensorManager.unregisterListener(this);
+        mSensorManager.unregisterListener(this);
     }
 
-    float[] mGravity;
-    float[] mGeomagnetic;
+//    float[] mGravity;
+//    float[] mGeomagnetic;
 
     @Override
     public void onSensorChanged(SensorEvent event) {
         // get the angle around the z-axis rotated
-//        float degree = Math.round(event.values[0]);
-//        degree = SensorManager.getOrientation(event.values, event.values);
-//        textView.setText("Heading: " + Float.toString(degree) + " degrees");
-//        currentDegree = -degree;
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
-            mGravity = event.values;
-        else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
-            mGeomagnetic = event.values;
-        if (mGravity != null && mGeomagnetic != null) {
-            float R[] = new float[9];
-            float I[] = new float[9];
-            boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
-            if (success) {
-                float orientation[] = new float[3];
-                SensorManager.getOrientation(R, orientation);
-                Float azimut = orientation[0];
-                //textView.setText("Heading: " + Double.toString(Math.round(azimut)) + " degrees");
-
-            }
+        if (width == 0){
+            width = grid.getWidth();
+            gridRight.setTranslationX(width);
+            gridLeft.setTranslationX(-width);
+            gridRight.setAlpha(1);
+            gridLeft.setAlpha(1);
         }
+        float degree = Math.round(event.values[0]);
+        if (animationEnded) {
+            textAzimuth.setText(String.format(azimuthHolder, degree));
+            //grid.setRotation(degree);
+            float trans = (degree < 180) ? 0.5f : -0.5f;
+            grid.setTranslationX(grid.getX() + trans);
+            gridRight.setTranslationX(gridRight.getX() + trans);
+            gridLeft.setTranslationX(gridLeft.getX() + trans);
+            Rect bounds = new Rect();
+            grid.getDrawingRect(bounds);
 
+            smallArrow.setRotation(degree);
+        }
+//        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+//            mGravity = event.values;
+//        else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+//            mGeomagnetic = event.values;
+//        if (mGravity != null && mGeomagnetic != null) {
+//            float R[] = new float[9];
+//            float I[] = new float[9];
+//            boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+//            if (success) {
+//                float orientation[] = new float[3];
+//                SensorManager.getOrientation(R, orientation);
+//                Float azimuth = orientation[0];
+//                textAzimuth.setText("a:" + Double.toString(Math.round(azimuth))+ (char) 0x00B0);
+//                //textView.setText("Heading: " + Double.toString(Math.round(azimut)) + " degrees");
+//
+//            }
+//        }
+
+    }
+
+    private float getRotationForSmallArrow(float degree) {
+        float convert;
+        if (degree  < 180){
+            convert = degree / 2f;
+        } else {
+            convert =  -(((degree - 180)) / 2f);
+        }
+        Log.d("TAG", "degree: " +degree + "  ,   convert: " + convert);
+        return convert;
     }
 
     @Override
