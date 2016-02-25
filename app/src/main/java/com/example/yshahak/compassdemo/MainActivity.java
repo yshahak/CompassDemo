@@ -5,18 +5,14 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
-import android.graphics.Rect;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -30,41 +26,35 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private View halfPanelAnimationView;
     private View halfPanel;
     private View impNeedle;
-    private ImageView grid, gridRight, gridLeft;
+    private CustomGrid grid;
     private TextView textAzimuth;
     private View smallArrow;
     private View meterGrid;
-    private View square1, square2, square3, square4 ;
     private boolean animationEnded;
     String azimuthHolder;
-    private int width;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        azimuthHolder = getString(R.string.azimuth);
+        setContentView(R.layout.activity);
 
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
+        azimuthHolder = getString(R.string.azimuth);
 
-        textViewSonarHot = (TextView) findViewById(R.id.text_view_sonar_hot);
+       /* textViewSonarHot = (TextView) findViewById(R.id.text_view_sonar_hot);
         hotFire = findViewById(R.id.img_hot_fire);
         halfPanelAnimationView = findViewById(R.id.half_panel_rotate_holder);
         halfPanel = findViewById(R.id.half_panel);
         impNeedle = findViewById(R.id.img_needle);
-        grid = (ImageView) findViewById(R.id.grid);
-        gridRight = (ImageView) findViewById(R.id.grid1);
-        gridLeft = (ImageView) findViewById(R.id.grid2);
+        grid = (CustomGrid) findViewById(R.id.grid);
+
         textAzimuth = (TextView) findViewById(R.id.text_azimuth);
         smallArrow = findViewById(R.id.img_arrow);
         meterGrid = findViewById(R.id.meter_grid);
-        square1 = findViewById(R.id.img_square1);
-        square2 = findViewById(R.id.img_square2);
-        square3 = findViewById(R.id.img_square3);
-        square4 = findViewById(R.id.img_square4);
+
         //hot panel fade in animation
         final DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -86,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             }
         });
-
+*/
 
     }
 
@@ -102,9 +92,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         AnimatorSet halfPanelAnimation = getHalfPanelEnterAnimation();
         AnimatorSet triangleAnimation = getTriangleAnimation();
         ObjectAnimator meterGridAnimation = ObjectAnimator.ofFloat(meterGrid, View.ALPHA, 1).setDuration(1500);
-        AnimatorSet squaresAnimator = getSquaresAnimation();
+        //AnimatorSet squaresAnimator = getSquaresAnimation();
         AnimatorSet animator = new AnimatorSet();
-        animator.playSequentially(hotPolarAnimation, halfPanelAnimation, triangleAnimation, meterGridAnimation, squaresAnimator);
+        animator.playSequentially(hotPolarAnimation, halfPanelAnimation, triangleAnimation, meterGridAnimation);
         animator.start();
     }
 
@@ -154,6 +144,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void onAnimationEnd(Animator animation) {
                 animationEnded = true;
+                grid.fadeInSquares();
 
             }
         });
@@ -174,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return animatorSet;
     }
 
-    private AnimatorSet getSquaresAnimation() {
+   /* private AnimatorSet getSquaresAnimation() {
         ObjectAnimator alpha1 = ObjectAnimator.ofFloat(square1, View.ALPHA, 1);
         ObjectAnimator alpha2 = ObjectAnimator.ofFloat(square2, View.ALPHA, 1);
         ObjectAnimator alpha3 = ObjectAnimator.ofFloat(square3, View.ALPHA, 1);
@@ -201,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playTogether(animatorSet1, animatorSet2, animatorSet3, animatorSet4);
         return animatorSet;
-    }
+    }*/
 
     @Override
     protected void onResume() {
@@ -225,24 +216,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
         // get the angle around the z-axis rotated
-        if (width == 0){
-            width = grid.getWidth();
-            gridRight.setTranslationX(width);
-            gridLeft.setTranslationX(-width);
-            gridRight.setAlpha(1);
-            gridLeft.setAlpha(1);
-        }
         float degree = Math.round(event.values[0]);
         if (animationEnded) {
             textAzimuth.setText(String.format(azimuthHolder, degree));
-            //grid.setRotation(degree);
-            float trans = (degree < 180) ? 0.5f : -0.5f;
-            grid.setTranslationX(grid.getX() + trans);
-            gridRight.setTranslationX(gridRight.getX() + trans);
-            gridLeft.setTranslationX(gridLeft.getX() + trans);
-            Rect bounds = new Rect();
-            grid.getDrawingRect(bounds);
-
+            grid.setOffset(degree);
             smallArrow.setRotation(degree);
         }
 //        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)

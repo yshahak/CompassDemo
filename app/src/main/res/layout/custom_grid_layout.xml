@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@mipmap/ic_launcher"
+        android:background="@drawable/small_square"
+        tools:showIn="@layout/custom_grid_layout" />
+<!--
+    <include
+        layout="@layout/small_offer_icon"
+        android:id="@+id/img_square1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="170dp" />
+
+    <include
+        layout="@layout/small_offer_icon"
+        android:id="@+id/img_square2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="175dp" />
+
+    <include
+        layout="@layout/small_offer_icon"
+        android:id="@+id/img_square3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="40dp"
+        android:layout_marginTop="350dp" />
+
+    <include
+        layout="@layout/small_offer_icon"
+        android:id="@+id/img_square4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="40dp"
+        android:layout_marginTop="320dp" />-->
+
+</merge>
