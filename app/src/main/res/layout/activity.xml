@@ -6,6 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <include layout="@layout/bubble_offer" />
+
     <com.example.yshahak.compassdemo.CustomGrid
         android:id="@+id/grid"
         android:layout_width="match_parent"

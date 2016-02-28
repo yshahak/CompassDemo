@@ -1,33 +1,46 @@
 package com.example.yshahak.compassdemo;
 
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.Display;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.MotionEvent;
 import android.view.WindowManager;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
+import android.widget.FrameLayout;
+import android.widget.Toast;
+
+import java.util.Random;
 
 /**
  * Created by B.E.L on 25/02/2016.
  */
-public class CustomGrid extends RelativeLayout {
+public class CustomGrid extends FrameLayout {
 
     private final Paint paint;
+    private final int smallIconDimen;
+    private final Bitmap bm1, bm2, bm3, bm4;
+    private final Bitmap[] bmArray;
+    private final Paint[] paintArray;
+    private final float[] leftMarginArray, topMarginArray;
+    private int bubbleWidth, bubbleHeight;
+    private Rect[] rects = new Rect[4];
     private float widthCell, heightCell, widthScreen, heightScreen, degreeFactor;
     private float offset;
-    private View square1, square2, square3, square4 ;
+    private boolean left;
+    private Drawable target;
+    private Drawable bubble;
+    private int clicked = -1;
+    private Drawable icon;
+    //private View square1, square2, square3, square4 ;
 
     public CustomGrid(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -40,8 +53,6 @@ public class CustomGrid extends RelativeLayout {
         paint.setColor(ContextCompat.getColor(getContext(), R.color.blue_grid));
         paint.setStrokeWidth(1);
 
-        init();
-
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
         Point size = new Point();
@@ -52,46 +63,92 @@ public class CustomGrid extends RelativeLayout {
         heightCell = heightScreen / 8f;
         degreeFactor = widthCell / 360f;
 
+        smallIconDimen = (int)(getDpInPixels(getContext(), 48) / 2f);
+        bm1 =  decodeSampledBitmapFromResource(getResources(), R.mipmap.ic_launcher, smallIconDimen, smallIconDimen);
+        bm2 =  decodeSampledBitmapFromResource(getResources(), R.mipmap.ic_launcher, smallIconDimen, smallIconDimen);
+        bm3 =  decodeSampledBitmapFromResource(getResources(), R.mipmap.ic_launcher, smallIconDimen, smallIconDimen);
+        bm4 =  decodeSampledBitmapFromResource(getResources(), R.mipmap.ic_launcher, smallIconDimen, smallIconDimen);
+        bmArray = new Bitmap[]{bm1, bm2, bm3, bm4};
+        paintArray = new Paint[]{new Paint(), new Paint(), new Paint(), new Paint()};
+        leftMarginArray = new float[]{(1 *widthScreen / 4)
+                ,  (3f * widthScreen / 4)
+                ,  (1.2f *widthScreen / 4)
+                ,  (3f *widthScreen / 4)};
+        topMarginArray = new float[]{(1.2f *heightScreen / 8f)
+        ,  2.5f * (heightScreen / 8f)
+        ,  4f * (heightScreen / 8f)
+        ,  5.2f * (heightScreen / 8f)};
+        updateRects();
+        target = getResources().getDrawable(R.drawable.img_sonar_target);
+        bubble = getResources().getDrawable(R.drawable.img_sonar_info_bubble);
+        icon = getResources().getDrawable(R.mipmap.ic_launcher);
+        if (bubble != null) {
+            bubbleWidth = bubble.getIntrinsicWidth();
+            bubbleHeight = bubble.getIntrinsicHeight();
+        }
     }
 
-    private void init() {
-        View v = LayoutInflater.from(getContext()).inflate(R.layout.small_offer_icon, this, false);
-        addView(v);
-        //inflate(getContext(), R.layout.custom_grid_layout, this);
-//        square1 = findViewById(R.id.img_square1);
-//        square2 = findViewById(R.id.img_square2);
-//        square3 = findViewById(R.id.img_square3);
-//        square4 = findViewById(R.id.img_square4);
-        setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        setGravity(Gravity.CENTER);
-        ImageView mainImage = new ImageView(getContext());
-        LayoutParams params = new LayoutParams((int)widthCell, (int)heightCell);
-
-        mainImage.setImageResource(R.mipmap.ic_launcher);
-        mainImage.setLayoutParams(params);
-
-        addView(mainImage);
-
-        RelativeLayout.LayoutParams crossParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-
-        crossParams.addRule(RelativeLayout.ALIGN_TOP | RelativeLayout.ALIGN_LEFT, mainImage.getId());
-
-        TextView tv = new TextView(getContext());
-
-        tv.setText("hello world");
-
-        addView(tv);
+    public static Bitmap decodeSampledBitmapFromResource(Resources res, int resId, int reqWidth, int reqHeight) {
+        return Bitmap.createScaledBitmap(BitmapFactory.decodeResource(res, resId, null), reqWidth, reqHeight, false);
     }
+    private Random randomGenerator = new Random();
+    private int random = randomGenerator.nextInt(4);
+    private static final int FADE_MILLISECONDS = 1000; // 3 second fade effect
+    private static final int FADE_STEP = 100;          // 120ms refresh
 
-    @Override
-    public void onViewAdded(View child) {
-        super.onViewAdded(child);
-    }
+    // Calculate our alpha step from our fade parameters
+    private static final int ALPHA_STEP = 255 / (FADE_MILLISECONDS / FADE_STEP);
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
         //super.onDraw(canvas); // no need to call super
+        int count = 0;
+        for (Bitmap bm : bmArray){
+            Paint paint = paintArray[count];
+            int alpha = paint.getAlpha();
+            if (alpha < 255) {
+                // Update your alpha by a step
+                alpha += ALPHA_STEP;
+                paint.setAlpha(alpha);
+                //postInvalidateDelayed(FADE_STEP, (int) widthCell, (int)(heightCell * 2), (int) widthCell + smallIconDimen, (int)(heightCell * 2) + smallIconDimen);
+            } else if (alpha != 255){
+                alpha = 255;
+                paint.setAlpha(alpha);
+            }
+            float leftMargin = leftMarginArray[count];
+            leftMargin += 1f; ;
+            float topMargin = topMarginArray[count];
+            if (leftMargin + smallIconDimen /2f < widthScreen / 2){
+                topMargin -= getYCurve();
+            } else {
+                topMargin += getYCurve();
+            }
+            //Log.d("TAG", "left: " + leftMargin + "  top:  " + top );
+            leftMarginArray[count] = leftMargin;
+            topMarginArray[count] = topMargin;
+            if (leftMargin > widthScreen){
+                leftMarginArray[count] = 0;
+                if (count == random){ // need to move the target
+                    random = randomGenerator.nextInt(4);
+                }
+                if (count == clicked){
+                    ((MainActivity)getContext()).removeOfferBubble();
+                    clicked = -1;
+                }
+            } else if (!(count == clicked)) {
+                canvas.drawBitmap(bm, leftMargin, topMargin, paint);
+            }
+
+            count++;
+        }
+        updateRects();
+        if (clicked == -1) {
+            target.setBounds(rects[random]);
+            target.draw(canvas);
+        } else {
+            ((MainActivity)getContext()).updateOfferBubbleUi(leftMarginArray[clicked], topMarginArray[clicked]);
+            //drawBubble(canvas);
+        }
         int i = 0;
         while (widthCell * i + offset >= 0 && widthCell * i + offset < widthScreen ){
             if (widthCell * i + offset == 0){
@@ -112,48 +169,25 @@ public class CustomGrid extends RelativeLayout {
 
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-
+    private void drawBubble(Canvas canvas) {
+        bubble.setBounds((int)leftMarginArray[clicked] - (bubbleWidth / 2), (int)topMarginArray[clicked] - (bubbleHeight / 2), (int)leftMarginArray[clicked] + (bubbleWidth / 2), (int)topMarginArray[clicked] + (bubbleHeight / 2));
+        bubble.draw(canvas);
+        icon.setBounds((int)leftMarginArray[clicked] + (bubbleWidth / 2) - icon.getIntrinsicWidth(),(int)topMarginArray[clicked] + (bubbleHeight / 2) - icon.getIntrinsicHeight(),  (int)leftMarginArray[clicked] + (bubbleWidth / 2), (int)topMarginArray[clicked] + (bubbleHeight / 2));
+        icon.draw(canvas);
     }
 
-    public void fadeInSquares(){
-        getSquaresAnimation().start();
+
+    private float getYCurve(){
+        float totY = heightScreen / 9f;
+        float step = (widthScreen / 2f) / 1f;
+        return totY / step;
     }
 
-    private AnimatorSet getSquaresAnimation() {
-        ObjectAnimator alpha1 = ObjectAnimator.ofFloat(square1, View.ALPHA, 1);
-        ObjectAnimator alpha2 = ObjectAnimator.ofFloat(square2, View.ALPHA, 1);
-        ObjectAnimator alpha3 = ObjectAnimator.ofFloat(square3, View.ALPHA, 1);
-        ObjectAnimator alpha4 = ObjectAnimator.ofFloat(square4, View.ALPHA, 1);
-        ObjectAnimator scaleX1 = ObjectAnimator.ofFloat(square1, View.SCALE_X, 1.3f, 1);
-        ObjectAnimator scaleY1 = ObjectAnimator.ofFloat(square1, View.SCALE_Y, 1.3f, 1);
-        ObjectAnimator scaleX2 = ObjectAnimator.ofFloat(square2, View.SCALE_X, 1.3f, 1);
-        ObjectAnimator scaleY2 = ObjectAnimator.ofFloat(square2, View.SCALE_Y, 1.3f, 1);
-        ObjectAnimator scaleX3 = ObjectAnimator.ofFloat(square3, View.SCALE_X, 1.3f, 1);
-        ObjectAnimator scaleY3 = ObjectAnimator.ofFloat(square3, View.SCALE_Y, 1.3f, 1);
-        ObjectAnimator scaleX4 = ObjectAnimator.ofFloat(square4, View.SCALE_X, 1.3f, 1);
-        ObjectAnimator scaleY4 = ObjectAnimator.ofFloat(square4, View.SCALE_Y, 1.3f, 1);
-        AnimatorSet animatorSet1 = new AnimatorSet().setDuration(1200);
-        animatorSet1.playTogether(alpha1, scaleX1, scaleY1);
-        AnimatorSet animatorSet2 = new AnimatorSet().setDuration(1200);
-        animatorSet2.setStartDelay(300);
-        animatorSet2.playTogether(alpha2, scaleX2, scaleY2);
-        AnimatorSet animatorSet3 = new AnimatorSet().setDuration(1200);
-        animatorSet3.setStartDelay(600);
-        animatorSet3.playTogether(alpha3, scaleX3, scaleY3);
-        AnimatorSet animatorSet4 = new AnimatorSet().setDuration(1200);
-        animatorSet4.setStartDelay(900);
-        animatorSet4.playTogether(alpha4, scaleX4, scaleY4);
-        AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.playTogether(animatorSet1, animatorSet2, animatorSet3, animatorSet4);
-        return animatorSet;
-    }
+
 
     public void setOffset(float azimuth) {
         this.offset = azimuth * degreeFactor;
+        left = (azimuth > 180);
         invalidate();
 
     }
@@ -161,4 +195,33 @@ public class CustomGrid extends RelativeLayout {
     public float getOffset() {
         return this.offset;
     }
+
+    public static int getDpInPixels(Context context, int dpValue) {
+        float d = context.getResources().getDisplayMetrics().density;
+        return (int) (dpValue * d); // margin in pixels
+    }
+
+    private void updateRects() {
+        rects [0] = new Rect( (int)leftMarginArray[0] - smallIconDimen / 2,(int) topMarginArray[0] - smallIconDimen / 2,(int) (leftMarginArray[0] + 1.5f* smallIconDimen),(int) (topMarginArray[0] + 1.5f* smallIconDimen));
+        rects [1] = new Rect( (int)leftMarginArray[1] - smallIconDimen / 2,(int) topMarginArray[1] - smallIconDimen / 2,(int) (leftMarginArray[1] + 1.5f* smallIconDimen),(int) (topMarginArray[1] + 1.5f* smallIconDimen));
+        rects [2] = new Rect( (int)leftMarginArray[2] - smallIconDimen / 2,(int) topMarginArray[2] - smallIconDimen / 2,(int) (leftMarginArray[2] + 1.5f* smallIconDimen),(int) (topMarginArray[2] + 1.5f* smallIconDimen));
+        rects [3] = new Rect( (int)leftMarginArray[3] - smallIconDimen / 2,(int) topMarginArray[3] - smallIconDimen / 2,(int) (leftMarginArray[3] + 1.5f* smallIconDimen),(int) (topMarginArray[3] + 1.5f* smallIconDimen));
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            int count = 0;
+            for (Rect rect : rects) {
+                if (rect.contains((int) event.getX(), (int) event.getY())) {
+                    Toast.makeText(getContext(), "rect number: " + count, Toast.LENGTH_SHORT).show();
+                    clicked = count;
+                    break;
+                }
+                count++;
+            }
+        }
+        return super.onTouchEvent(event);
+    }
+
 }

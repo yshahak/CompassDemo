@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<transition xmlns:android="http://schemas.android.com/apk/res/android"  >
+    <item android:id="@+id/icon0" android:drawable="@drawable/ic_sonar_fire" />
+    <item android:id="@+id/icon1" android:drawable="@drawable/mock_drawable"/>
+</transition>

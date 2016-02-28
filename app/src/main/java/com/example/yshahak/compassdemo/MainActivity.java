@@ -9,10 +9,15 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -32,19 +37,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private View meterGrid;
     private boolean animationEnded;
     String azimuthHolder;
+    private Compass mCompass;
+    private ViewGroup root;
+    private View offerBubble;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity);
+        setContentView(R.layout.activity_main);
+        root = (ViewGroup) findViewById(R.id.root);
 
+        mCompass = new Compass(this);
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+        this.mGravity = this.mSensorManager.getDefaultSensor( Sensor.TYPE_GRAVITY );
+
+        this.mAccelerometer = this.mSensorManager.getDefaultSensor( Sensor.TYPE_ACCELEROMETER );
+
+        this.mMagnetometer = this.mSensorManager.getDefaultSensor( Sensor.TYPE_MAGNETIC_FIELD );
+
+
+
+//
+//        accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+//        magnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
         azimuthHolder = getString(R.string.azimuth);
 
-       /* textViewSonarHot = (TextView) findViewById(R.id.text_view_sonar_hot);
+        textViewSonarHot = (TextView) findViewById(R.id.text_view_sonar_hot);
         hotFire = findViewById(R.id.img_hot_fire);
         halfPanelAnimationView = findViewById(R.id.half_panel_rotate_holder);
         halfPanel = findViewById(R.id.half_panel);
@@ -76,7 +96,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             }
         });
-*/
 
     }
 
@@ -144,7 +163,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void onAnimationEnd(Animator animation) {
                 animationEnded = true;
-                grid.fadeInSquares();
 
             }
         });
@@ -152,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private AnimatorSet getTriangleAnimation() {
-        textAzimuth.setText("a: 0" + (char) 0x00B0);
+        textAzimuth.setText(String.format(azimuthHolder, 0f));
         textAzimuth.animate().translationY(textAzimuth.getHeight() / 4).setDuration(0).start();
 
         ObjectAnimator alpha1 = ObjectAnimator.ofFloat(textAzimuth, View.ALPHA, 1).setDuration(500);
@@ -165,53 +183,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return animatorSet;
     }
 
-   /* private AnimatorSet getSquaresAnimation() {
-        ObjectAnimator alpha1 = ObjectAnimator.ofFloat(square1, View.ALPHA, 1);
-        ObjectAnimator alpha2 = ObjectAnimator.ofFloat(square2, View.ALPHA, 1);
-        ObjectAnimator alpha3 = ObjectAnimator.ofFloat(square3, View.ALPHA, 1);
-        ObjectAnimator alpha4 = ObjectAnimator.ofFloat(square4, View.ALPHA, 1);
-        ObjectAnimator scaleX1 = ObjectAnimator.ofFloat(square1, View.SCALE_X, 1.3f, 1);
-        ObjectAnimator scaleY1 = ObjectAnimator.ofFloat(square1, View.SCALE_Y, 1.3f, 1);
-        ObjectAnimator scaleX2 = ObjectAnimator.ofFloat(square2, View.SCALE_X, 1.3f, 1);
-        ObjectAnimator scaleY2 = ObjectAnimator.ofFloat(square2, View.SCALE_Y, 1.3f, 1);
-        ObjectAnimator scaleX3 = ObjectAnimator.ofFloat(square3, View.SCALE_X, 1.3f, 1);
-        ObjectAnimator scaleY3 = ObjectAnimator.ofFloat(square3, View.SCALE_Y, 1.3f, 1);
-        ObjectAnimator scaleX4 = ObjectAnimator.ofFloat(square4, View.SCALE_X, 1.3f, 1);
-        ObjectAnimator scaleY4 = ObjectAnimator.ofFloat(square4, View.SCALE_Y, 1.3f, 1);
-        AnimatorSet animatorSet1 = new AnimatorSet().setDuration(1200);
-        animatorSet1.playTogether(alpha1, scaleX1, scaleY1);
-        AnimatorSet animatorSet2 = new AnimatorSet().setDuration(1200);
-        animatorSet2.setStartDelay(300);
-        animatorSet2.playTogether(alpha2, scaleX2, scaleY2);
-        AnimatorSet animatorSet3 = new AnimatorSet().setDuration(1200);
-        animatorSet3.setStartDelay(600);
-        animatorSet3.playTogether(alpha3, scaleX3, scaleY3);
-        AnimatorSet animatorSet4 = new AnimatorSet().setDuration(1200);
-        animatorSet4.setStartDelay(900);
-        animatorSet4.playTogether(alpha4, scaleX4, scaleY4);
-        AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.playTogether(animatorSet1, animatorSet2, animatorSet3, animatorSet4);
-        return animatorSet;
-    }*/
 
     @Override
     protected void onResume() {
         super.onResume();
-        // for the system's orientation sensor registered listeners
-        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),   SensorManager.SENSOR_DELAY_UI);
-
-//        mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
-//        mSensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI);
+        this.haveGravity = this.mSensorManager.registerListener( mSensorEventListener, this.mGravity, SensorManager.SENSOR_DELAY_UI);
+        this.haveAccelerometer = this.mSensorManager.registerListener( mSensorEventListener, this.mAccelerometer, SensorManager.SENSOR_DELAY_UI);
+        this.haveMagnetometer = this.mSensorManager.registerListener( mSensorEventListener, this.mMagnetometer, SensorManager.SENSOR_DELAY_UI);
+        // if there is a gravity sensor we do not need the accelerometer
+        if( this.haveGravity ) {
+            this.mSensorManager.unregisterListener(this.mSensorEventListener, this.mAccelerometer);
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mSensorManager.unregisterListener(this);
+        mSensorManager.unregisterListener(this.mSensorEventListener);
+        //mCompass.unregisterListener();
     }
 
-//    float[] mGravity;
-//    float[] mGeomagnetic;
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -222,24 +213,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             grid.setOffset(degree);
             smallArrow.setRotation(degree);
         }
-//        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
-//            mGravity = event.values;
-//        else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
-//            mGeomagnetic = event.values;
-//        if (mGravity != null && mGeomagnetic != null) {
-//            float R[] = new float[9];
-//            float I[] = new float[9];
-//            boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
-//            if (success) {
-//                float orientation[] = new float[3];
-//                SensorManager.getOrientation(R, orientation);
-//                Float azimuth = orientation[0];
-//                textAzimuth.setText("a:" + Double.toString(Math.round(azimuth))+ (char) 0x00B0);
-//                //textView.setText("Heading: " + Double.toString(Math.round(azimut)) + " degrees");
-//
-//            }
-//        }
-
     }
 
     private float getRotationForSmallArrow(float degree) {
@@ -257,4 +230,68 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
+
+
+    private Sensor mGravity;
+    private Sensor mAccelerometer;
+    private Sensor mMagnetometer;
+
+    boolean haveGravity = false;
+    boolean haveAccelerometer = false;
+    boolean haveMagnetometer = false;
+
+    private SensorEventListener mSensorEventListener = new SensorEventListener() {
+
+        float[] gData = new float[3]; // gravity or accelerometer
+        float[] mData = new float[3]; // magnetometer
+        float[] rMat = new float[9];
+        float[] iMat = new float[9];
+        float[] orientation = new float[3];
+
+        public void onAccuracyChanged( Sensor sensor, int accuracy ) {}
+
+        @Override
+        public void onSensorChanged( SensorEvent event ) {
+            switch ( event.sensor.getType() ) {
+                case Sensor.TYPE_GRAVITY:
+                    gData = event.values.clone();
+                    break;
+                case Sensor.TYPE_ACCELEROMETER:
+                    gData = event.values.clone();
+                    break;
+                case Sensor.TYPE_MAGNETIC_FIELD:
+                    mData = event.values.clone();
+                    break;
+                default: return;
+            }
+
+            if ( SensorManager.getRotationMatrix( rMat, iMat, gData, mData ) ) {
+                float mAzimuth = (float) ((Math.toDegrees(SensorManager.getOrientation(rMat, orientation)[0]) + 360) % 360);
+                if (animationEnded) {
+                    textAzimuth.setText(String.format(azimuthHolder, mAzimuth));
+                    grid.setOffset(mAzimuth);
+                    smallArrow.setRotation(mAzimuth);
+                }
+
+            }
+        }
+    };
+
+    public void updateOfferBubbleUi(float leftMargin, float topMargin){
+        if (offerBubble == null ){
+            offerBubble = LayoutInflater.from(this).inflate(R.layout.bubble_offer, root, false);
+            root.addView(offerBubble, root.getChildCount() - 1);
+        } else if (offerBubble.getAlpha() == 0){
+            offerBubble.animate().alpha(1).setDuration(300).start();
+        }
+        offerBubble.setTranslationX(leftMargin);
+        offerBubble.setTranslationY(topMargin);
+    }
+
+    public void removeOfferBubble(){
+        if (offerBubble != null){
+            offerBubble.animate().alpha(0).setDuration(300).start();
+        }
+    }
+
 }
